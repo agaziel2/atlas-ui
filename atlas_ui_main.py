@@ -11,9 +11,10 @@ import requests
 from text_generation import Client
 requests.adapters.DEFAULT_TIMEOUT = 60
 
-_ = load_dotenv(find_dotenv())  # read local .env file
+_ = load_dotenv(find_dotenv())
 hf_api_key = os.environ['HF_API_KEY']
 llama2_api = os.environ['HF_API_LLAMA2_13B']
+
 headers = {"Authorization": f"Bearer {hf_api_key}"}
 
 def query(payload):
@@ -22,21 +23,29 @@ def query(payload):
 
 conversation_counter = 0  # Global variable to track conversation state
 user_responses = []  # Global variable to store user responses
+response_mappings = [
+    { "1": "Security", "2": "Risk Management", "3": "Audit", "4": "Governance" },
+    # ... (other mappings for other questions)
+]
 
 
 def respond(message, chat_history, instruction, temperature=0.7):
     global conversation_counter, user_responses
     questions = [
         "What should we work on? 1. Security 2. Risk Management 3. Audit 4. Governance",
-        "What can I help with? Options: 1. I want to learn how to do things 2. Suggest a process improvement 3. Suggest a new process",
-        "Where do you want me to search? 1. Internal Guidelines and Procedures 2. Industry Best Practice, Both"
+        "What can I help with? 1. I need security guidance 2. Suggest a process improvement 3. Suggest a new process",
+        "Where do you want me to search? 1. Internal Guidelines and Procedures 2. Industry Best Practice 3. Both"
     ]
-    #  first question
+    # first question
     if conversation_counter < len(questions):
         # Store the user's response to the previous question, if any
         if message:
             user_responses.append(message)
-        #  next question
+            # Acknowledge the user's selection
+            selected_option = response_mappings[conversation_counter-1].get(message, message)
+            acknowledgment = f"You selected: {selected_option}"
+            chat_history = chat_history + [[acknowledgment, ""]]
+        # next question
         question = questions[conversation_counter]
         conversation_counter += 1
         chat_history = chat_history + [[question, ""]]
@@ -66,8 +75,9 @@ with gr.Blocks() as demo:
     msg = gr.Textbox(label="Prompt")
     with gr.Accordion(label="Advanced options", open=False):
         system = gr.Textbox(label="System message", lines=2,
-                            value="You are Atlas a senior security professional in the banking industry, with deep knowledge of security risk management and governance.")
+        value="You are Atlas a senior security professional in the banking industry, with deep knowledge of security risk management and governance.")
         temperature = gr.Slider(label="temperature", minimum=0.1, maximum=1, value=0.7, step=0.1)
+        greeting = [["Hello! Let's get started. Please answer the following questions.", ""]]
     btn = gr.Button("Submit")
     clear = gr.ClearButton(components=[msg, chatbot], value="Clear console")
 
