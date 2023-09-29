@@ -85,7 +85,7 @@ with gr.Blocks() as demo:
     msg.submit(respond, inputs=[msg, chatbot, system], outputs=[msg, chatbot])
 
 gr.close_all()
-layout = gr.Layout(
+layout = gr.layouts.GridLayout(
     rows=[
         [gr.Block(chatbot, label="Chat History")],
         [gr.Block(msg, label="Your Response"), gr.Block(btn), gr.Block(clear)]
@@ -97,5 +97,6 @@ iface = gr.Interface(
     outputs=[msg, chatbot],
     layout=layout,
     live=True
+
 )
 demo.queue().launch(share=True, server_port=16306)
